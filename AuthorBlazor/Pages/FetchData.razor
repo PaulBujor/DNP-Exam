@@ -1,0 +1,122 @@
+﻿@page "/"
+@using AuthorBlazor.Data
+@using AuthorBlazor.Services
+@inject AuthorService AuthorService
+@inject BookService BookService
+
+<h1>Books</h1>
+
+@if (authors == null)
+{
+	<p><em>Loading...</em></p>
+}
+else
+{
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Delete</th>
+				<th>ISBN</th>
+				<th>Search: <input type="text" @bind="@titleFilter" /> <button @onclick="@(async e => await FilterByTitleAsync())">Go</button> <br />Title </th>
+				<th>Search: <input type="text" @bind="@authorFilter" /> <button @onclick="@(async e => await FilterByNameAsync())">Go</button> <br /> Written by</th>
+				<th>Year of publication</th>
+				<th>Number of pages</th>
+				<th>Genre</th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var author in filteredAuthors)
+			{
+				@if (author.Books != null && author.Books.Count != 0)
+				{
+					@if (titleFilter.Equals(""))
+					{
+						@foreach (var book in author.Books)
+						{
+							<tr>
+								<td><button @onclick="@(async e => await DeleteBookAsync(book.ISBN))">Delete</button></td>
+								<td>@book.ISBN</td>
+								<td>@book.Title</td>
+								<td>@author.FirstName @author.LastName</td>
+								<td>@book.PublicationYear</td>
+								<td>@book.NumOfPages</td>
+								<td>@book.Genre</td>
+							</tr>
+						}
+					}
+					else
+					{
+						@foreach (var book in author.Books)
+						{
+							@if (book.Title.ToLower().Contains(titleFilter)) //idk why this doesnt work and dont have time to fix this
+							{
+								<tr>
+									<td><button @onclick="@(async e => await DeleteBookAsync(book.ISBN))">Delete</button></td>
+									<td>@book.ISBN</td>
+									<td>@book.Title</td>
+									<td>@author.FirstName @author.LastName</td>
+									<td>@book.PublicationYear</td>
+									<td>@book.NumOfPages</td>
+									<td>@book.Genre</td>
+								</tr>
+							}
+						}
+					}
+				}
+				else
+				{
+					<tr>
+						<td>-</td>
+						<td>-</td>
+						<td>-</td>
+						<td>@author.FirstName @author.LastName</td>
+						<td>-</td>
+						<td>-</td>
+						<td>-</td>
+					</tr>
+				}
+			}
+		</tbody>
+	</table>
+}
+
+@code {
+	private List<Author> authors = new List<Author>();
+	private List<Author> filteredAuthors = new List<Author>();
+	private string titleFilter = "";
+	private string authorFilter = "";
+
+	protected override async Task OnInitializedAsync()
+	{
+		authors = await AuthorService.GetAuthorsAsync();
+		filteredAuthors = authors;
+	}
+
+	protected async Task FilterByNameAsync()
+	{
+		if (authorFilter.Equals(""))
+			filteredAuthors = authors;
+		else
+		{
+			filteredAuthors = new List<Author>();
+			string auth = authorFilter.ToLower();
+			foreach (var author in authors)
+			{
+				if ($"{author.FirstName} {author.LastName}".ToLower().Contains(auth))
+					filteredAuthors.Add(author);
+			}
+		}
+	}
+
+	protected async Task FilterByTitleAsync()
+	{
+		titleFilter = titleFilter.ToLower();
+	}
+
+	private async Task DeleteBookAsync(int ISBN)
+	{
+		await BookService.DeleteBookAsync(ISBN);
+		authors = await AuthorService.GetAuthorsAsync();
+		filteredAuthors = authors;
+	}
+}

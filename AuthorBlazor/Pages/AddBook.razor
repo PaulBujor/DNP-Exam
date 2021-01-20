@@ -1,0 +1,72 @@
+﻿@page "/book"
+@using AuthorBlazor.Data
+@using AuthorBlazor.Services
+@inject AuthorService AuthorService
+@inject BookService BookService 
+
+<h1>Add book</h1>
+
+<EditForm Model="@book" OnValidSubmit="Submit">
+	Type:
+	<InputSelect @bind-Value="@selectedAuthorIDS">
+		<option value="">-- Select --</option>
+		@foreach (Author _author in authors)
+		{
+			<option value="@_author.Id">@_author.FirstName @_author.LastName</option>
+		}
+	</InputSelect>
+	<br />
+	ISBN: <InputNumber @bind-Value="book.ISBN"></InputNumber>
+	<br />
+	Title: <InputText @bind-Value="book.Title"></InputText>
+	<br />
+	Publication year: <InputNumber @bind-Value="book.PublicationYear"></InputNumber>
+	<br />
+	Number of pages: <InputNumber @bind-Value="book.NumOfPages"></InputNumber>
+	<br />
+	Genre: <InputText @bind-Value="book.Genre"></InputText>
+	<br />
+	<button type="submit">Submit</button>
+	<p style="color: red;">@ErrorMessage</p>
+</EditForm>
+
+@code {
+	private Book book = new Book();
+	private string selectedAuthorIDS;
+	private int selectedAuthorID;
+	private List<Author> authors = new List<Author>();
+	private string ErrorMessage = "";
+
+	protected override async Task OnInitializedAsync()
+	{
+		authors = await AuthorService.GetAuthorsAsync();
+	}
+
+	private async Task Submit()
+	{
+		try
+		{
+			int.TryParse(selectedAuthorIDS, out selectedAuthorID);
+		} catch (Exception e)
+		{
+			ErrorMessage = $"There was a problem selecting the author\n + {e.Message}";
+		}
+		if (selectedAuthorID == 0)
+		{
+			ErrorMessage = "Please choose an author!";
+		}
+		else
+		{
+			ErrorMessage = "";
+			try
+			{
+				await BookService.AddBookAsync(selectedAuthorID, book);
+				book = new Book();
+			}
+			catch (Exception e)
+			{
+				ErrorMessage = e.Message;
+			}
+		}
+	}
+}

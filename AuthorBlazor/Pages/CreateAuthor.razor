@@ -1,0 +1,35 @@
+﻿@page "/author"
+@using AuthorBlazor.Data
+@using AuthorBlazor.Services
+@inject AuthorService AuthorService
+
+<h1>Add author</h1>
+
+<EditForm Model="@author" OnValidSubmit="Submit">
+	<br />
+	First name: <InputText @bind-Value="author.FirstName"></InputText>
+	<br />
+	Last name: <InputText @bind-Value="author.LastName"></InputText>
+	<br />
+	<button type="submit">Submit</button>
+	<p style="color: red;">@ErrorMessage</p>
+</EditForm>
+
+@code {
+	private Author author = new Author();
+	private string ErrorMessage = "";
+
+	private async Task Submit()
+	{
+		ErrorMessage = "";
+		try
+		{
+			await AuthorService.AddAuthorAsync(author);
+			author = new Author();
+		}
+		catch (Exception e)
+		{
+			ErrorMessage = e.Message;
+		}
+	}
+}
